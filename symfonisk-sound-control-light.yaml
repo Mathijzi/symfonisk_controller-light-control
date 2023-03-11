@@ -1,0 +1,52 @@
+blueprint:
+  name: IKEA Symfonisk Sound Controller Light Group Dimmer
+  description: Pas de helderheid aan van een groep lichten met behulp van een IKEA Symfonisk Sound Controller
+  domain: automation
+  input:
+    light_group:
+      name: Light Group
+      description: De naam van de groep lichten om aan te passen
+      selector:
+        entity:
+          domain: light
+    controller:
+      name: IKEA Symfonisk Sound Controller
+      description: De entiteit-id van de IKEA Symfonisk Sound Controller
+      selector:
+        entity:
+          domain: sensor
+          integration: mqtt
+    step:
+      name: Helderheidsstap
+      description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 100
+          mode: slider
+          step: 1
+  source_url: https://www.example.com
+
+mode: restart
+alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
+trigger:
+  platform: state
+  entity_id: !input 'controller'
+  attribute: state
+condition:
+  - condition: template
+    value_template: '{{ trigger.to_state.state in ["click", "hold"] }}'
+action:
+  - service: light.turn_on
+    data_template:
+      entity_id: !input 'light_group'
+      brightness: >
+        {% set step = (step / 255 * 100) %}
+        {% if trigger.to_state.attributes.direction == "backward" %}
+          {{ state_attr(entity_id, "brightness") | int - step }}
+        {% elif trigger.to_state.attributes.direction == "forward" %}
+          {{ state_attr(entity_id, "brightness") | int + step }}
+        {% else %}
+          {{ state_attr(entity_id, "brightness") }}
+        {% endif %}
