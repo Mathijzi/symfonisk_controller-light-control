@@ -15,7 +15,6 @@ blueprint:
       selector:
         device:
           manufacturer: IKEA of Sweden
-          model: SYMFONISK Sound Controller
     step:
       name: Helderheidsstap
       description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
@@ -26,7 +25,6 @@ blueprint:
           max: 100
           mode: slider
           step: 1
-  source_url: https://www.example.com
 
 mode: restart
 alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
