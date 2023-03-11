@@ -15,6 +15,7 @@ blueprint:
       selector:
         device:
           manufacturer: IKEA of Sweden
+          model: SYMFONISK Sound Controller
     step:
       name: Helderheidsstap
       description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
