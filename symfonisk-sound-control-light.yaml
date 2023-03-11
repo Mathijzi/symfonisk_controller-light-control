@@ -1,4 +1,4 @@
-blueprint:
+blueprint: 
   name: IKEA Symfonisk Sound Controller Light Group Dimmer
   description: Pas de helderheid aan van een groep lichten met behulp van een IKEA Symfonisk Sound Controller
   domain: automation
