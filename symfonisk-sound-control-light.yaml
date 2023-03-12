@@ -1,14 +1,24 @@
 blueprint:
-  name: IKEA Symfonisk Sound Controller Licht Controller
-  description: Pas de helderheid aan van een licht groep of losse lamp aan met behulp van een IKEA Symfonisk Sound Controller.
+  name: Deconz - IKEA SYMFONISK for lights
+  description: 'Control lights with an IKEA SYMFONISK from the Deconz integration.
+
+    Pushing the button once, toggles the lights on/off to the last set
+    brightness (unless the force brightness is toggled on in the blueprint).
+    Rotating left/right will change the brightness.
+
+    The button can be pressed double or triple, these actions can be assigned
+    freely. This allows you to assign, e.g., a scene or anything else.
+
+    Thanks to @Frenck. I modified his ZHA version to make it useful for Deconz.
+    '
   domain: automation
   input:
     remote:
       name: Remote
-      description: IKEA Symfonisk controller to use
+      description: IKEA SYMFONISK to use
       selector:
         device:
-          integration: zha
+          integration: deconz
           manufacturer: IKEA of Sweden
           model: SYMFONISK Sound Controller
     light:
@@ -18,33 +28,26 @@ blueprint:
         target:
           entity:
             domain: light
-    dimmer_interval:
-      name: Dimmer interval
-      description: Interval after which to increase brightness
-      default: 0.2
+    force_brightness:
+      name: Force turn on brightness
+      description: 'Force the brightness to the set level below, when the "on" button
+        on the remote is pushed and lights turn on.
+
+        '
+      default: false
+      selector:
+        boolean: {}
+    brightness:
+      name: Brightness
+      description: Brightness of the light(s) when turning on
+      default: 50
       selector:
         number:
-          min: 0.1
-          max: 1.0
-          step: 0.1
-          unit_of_measurement: s
+          min: 0.0
+          max: 100.0
           mode: slider
-    dimmer_steps:
-      name: Dimmer steps
-      description: Number of steps from lowest to highest brightness
-      default: 5
-      selector:
-        number:
-          min: 2
-          max: 10
-          step: 1
-          mode: slider
-    single_press:
-      name: Single press
-      description: Action to run on single press
-      default: []
-      selector:
-        action: {}
+          step: 1.0
+          unit_of_measurement: '%'
     double_press:
       name: Double press
       description: Action to run on double press
@@ -57,51 +60,55 @@ blueprint:
       default: []
       selector:
         action: {}
-  source_url: https://gist.github.com/sbyx/86d7ad965f3751d0bb9111fb8d63da5b
-variables:
-  steps: !input "dimmer_steps"
-  step: "{{ 100 / float(steps) }}"
-  command: "{{ trigger.event.data.command }}"
-  args: "{{ trigger.event.data.args }}"
-mode: restart
+  source_url: https://raw.githubusercontent.com/Sholofly/home-assistant-config/master/blueprints/automation/deconz_ikea_symfonisk_lights.yaml
+mode: single
 max_exceeded: silent
+variables:
+  force_brightness: !input 'force_brightness'
 trigger:
-  - platform: event
-    event_type: zha_event
-    event_data:
-      device_id: !input "remote"
+- platform: event
+  event_type: deconz_event
+  event_data:
+    device_id: !input 'remote'
 action:
-  - choose:
-      - conditions:
-          - "{{ command == 'toggle' }}"
-        sequence: !input "single_press"
-      - conditions:
-          - "{{ command == 'step' and args == [0, 1, 0] }}"
-        sequence: !input "double_press"
-      - conditions:
-          - "{{ command == 'step' and args == [1, 1, 0] }}"
-        sequence: !input "triple_press"
-      - conditions:
-          - "{{ command == 'move' and args == [0, 195] }}"
+- variables:
+    event: '{{ trigger.event.data.event }}'
+- choose:
+  - conditions:
+    - '{{ event == 1002 }}'
+    sequence:
+    - choose:
+      - conditions: '{{ force_brightness }}'
         sequence:
-          - repeat:
-              count: !input "dimmer_steps"
-              sequence:
-                - delay: !input "dimmer_interval"
-                - service: light.turn_on
-                  target: !input "light"
-                  data:
-                    brightness_step_pct: "{{ step }}"
-                    transition: !input "dimmer_interval"
-      - conditions:
-          - "{{ command == 'move' and args == [1, 195] }}"
-        sequence:
-          - repeat:
-              count: !input "dimmer_steps"
-              sequence:
-                - delay: !input "dimmer_interval"
-                - service: light.turn_on
-                  target: !input "light"
-                  data:
-                    brightness_step_pct: "{{ -step }}"
-                    transition: !input "dimmer_interval"
+        - service: light.toggle
+          target: !input 'light'
+          data:
+            transition: 1
+            brightness_pct: !input 'brightness'
+      default:
+      - service: light.toggle
+        target: !input 'light'
+        data:
+          transition: 1
+    - delay:
+        milliseconds: 100
+  - conditions:
+    - '{{ event == 2001 }}' #start turning clockwise
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+      data:
+        brightness_step_pct: 5
+  - conditions:
+    - '{{ event == 3001 }}' #start turning counter clockwise
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+      data:
+        brightness_step_pct: -5
+  - conditions:
+    - '{{ event == 1004 }}'
+    sequence: !input 'double_press'
+  - conditions:
+    - '{{ event == 1005 }}'
+    sequence: !input 'triple_press'
