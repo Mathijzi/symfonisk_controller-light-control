@@ -14,8 +14,8 @@ blueprint:
       description: De entiteit-id van de IKEA Symfonisk Sound Controller
       selector:
         entity:
-          domain: sensor
-          integration: zha
+          integration: deconz
+          manufacturer: IKEA of Sweden
     step:
       name: Helderheidsstap
       description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
