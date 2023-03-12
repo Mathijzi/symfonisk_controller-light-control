@@ -18,8 +18,7 @@ blueprint:
       description: IKEA SYMFONISK to use
       selector:
         device:
-          manufacturer: IKEA of Sweden
-          model: SYMFONISK Sound Controller
+          integration: zha
     light:
       name: Light(s)
       description: The light(s) to control
