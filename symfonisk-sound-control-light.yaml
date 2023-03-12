@@ -13,7 +13,7 @@ blueprint:
       name: IKEA Symfonisk Sound Controller
       description: De entiteit-id van de IKEA Symfonisk Sound Controller
       selector:
-        device:
+        entity:
           integration: deconz
     step:
       name: Helderheidsstap
