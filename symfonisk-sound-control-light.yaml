@@ -30,7 +30,7 @@ mode: restart
 alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
 trigger:
   platform: state
-  entity_id: !input 'controller'
+  target: !input 'controller'
   attribute: state
 condition:
   - condition: template
