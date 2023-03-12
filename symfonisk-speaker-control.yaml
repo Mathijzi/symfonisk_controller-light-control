@@ -14,7 +14,6 @@ blueprint:
       description: IKEA remote to use
       selector:
         device:
-          integration: deconz
           manufacturer: IKEA of Sweden
     seek:
       name: Seek
