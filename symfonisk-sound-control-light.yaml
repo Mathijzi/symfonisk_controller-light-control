@@ -1,52 +1,107 @@
 blueprint:
-  name: IKEA Symfonisk Sound Controller Light Group Dimmer
-  description: Pas de helderheid aan van een groep lichten met behulp van een IKEA Symfonisk Sound Controller zonder MQTT
+  name: IKEA Symfonisk Sound Controller Licht Controller
+  description: Pas de helderheid aan van een licht groep of losse lamp aan met behulp van een IKEA Symfonisk Sound Controller.
   domain: automation
   input:
-    light_group:
-      name: Light Group
-      description: De naam van de groep lichten om aan te passen
+    remote:
+      name: Remote
+      description: IKEA Symfonisk controller to use
       selector:
-        entity:
-          domain: light
-    controller:
-      name: IKEA Symfonisk Sound Controller
-      description: De entiteit-id van de IKEA Symfonisk Sound Controller
+        device:
+          integration: zha
+          manufacturer: IKEA of Sweden
+          model: SYMFONISK Sound Controller
+    light:
+      name: Light(s)
+      description: The light(s) to control
       selector:
-        entity:
-          integration: deconz
-    step:
-      name: Helderheidsstap
-      description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
-      default: 10
+        target:
+          entity:
+            domain: light
+    dimmer_interval:
+      name: Dimmer interval
+      description: Interval after which to increase brightness
+      default: 0.2
       selector:
         number:
-          min: 1
-          max: 100
+          min: 0.1
+          max: 1.0
+          step: 0.1
+          unit_of_measurement: s
           mode: slider
+    dimmer_steps:
+      name: Dimmer steps
+      description: Number of steps from lowest to highest brightness
+      default: 5
+      selector:
+        number:
+          min: 2
+          max: 10
           step: 1
-  source_url: https://www.example.com
-
+          mode: slider
+    single_press:
+      name: Single press
+      description: Action to run on single press
+      default: []
+      selector:
+        action: {}
+    double_press:
+      name: Double press
+      description: Action to run on double press
+      default: []
+      selector:
+        action: {}
+    triple_press:
+      name: Triple press
+      description: Action to run on triple press
+      default: []
+      selector:
+        action: {}
+  source_url: https://gist.github.com/sbyx/86d7ad965f3751d0bb9111fb8d63da5b
+variables:
+  steps: !input "dimmer_steps"
+  step: "{{ 100 / float(steps) }}"
+  command: "{{ trigger.event.data.command }}"
+  args: "{{ trigger.event.data.args }}"
 mode: restart
-alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
+max_exceeded: silent
 trigger:
-  platform: event
-  event_type: zha_event
-  event_data:
-    device_ieee: !input 'controller'
-condition:
-  - condition: template
-    value_template: '{{ trigger.event.data.cluster_id == 8 and trigger.event.data.command == "step" }}'
+  - platform: event
+    event_type: zha_event
+    event_data:
+      device_id: !input "remote"
 action:
-  - service: light.turn_on
-    data_template:
-      entity_id: !input 'light_group'
-      brightness: >
-        {% set step = (step / 255 * 100) %}
-        {% if trigger.event.data.args[0] == "backward" %}
-          {{ state_attr(entity_id, "brightness") | int - step }}
-        {% elif trigger.event.data.args[0] == "forward" %}
-          {{ state_attr(entity_id, "brightness") | int + step }}
-        {% else %}
-          {{ state_attr(entity_id, "brightness") }}
-        {% endif %}
+  - choose:
+      - conditions:
+          - "{{ command == 'toggle' }}"
+        sequence: !input "single_press"
+      - conditions:
+          - "{{ command == 'step' and args == [0, 1, 0] }}"
+        sequence: !input "double_press"
+      - conditions:
+          - "{{ command == 'step' and args == [1, 1, 0] }}"
+        sequence: !input "triple_press"
+      - conditions:
+          - "{{ command == 'move' and args == [0, 195] }}"
+        sequence:
+          - repeat:
+              count: !input "dimmer_steps"
+              sequence:
+                - delay: !input "dimmer_interval"
+                - service: light.turn_on
+                  target: !input "light"
+                  data:
+                    brightness_step_pct: "{{ step }}"
+                    transition: !input "dimmer_interval"
+      - conditions:
+          - "{{ command == 'move' and args == [1, 195] }}"
+        sequence:
+          - repeat:
+              count: !input "dimmer_steps"
+              sequence:
+                - delay: !input "dimmer_interval"
+                - service: light.turn_on
+                  target: !input "light"
+                  data:
+                    brightness_step_pct: "{{ -step }}"
+                    transition: !input "dimmer_interval"
