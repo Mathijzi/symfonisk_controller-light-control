@@ -14,7 +14,9 @@ blueprint:
       description: IKEA remote to use
       selector:
         device:
+          integration: zha
           manufacturer: IKEA of Sweden
+          model: SYMFONISK Sound Controller
     seek:
       name: Seek
       description: Seconds to skip while seeking
