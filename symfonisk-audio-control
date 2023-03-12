@@ -9,7 +9,7 @@ blueprint:
       description: Google Cast entity
       selector:
         entity:
-          device_class: media_player
+          device_class: speaker
     remote:
       name: Remote
       description: IKEA remote to use
