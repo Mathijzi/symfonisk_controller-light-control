@@ -30,7 +30,7 @@ mode: restart
 alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
 trigger:
   platform: state
-  target: !input 'controller'
+  entity_id: !input 'controller'
   attribute: state
 condition:
   - condition: template
@@ -38,7 +38,7 @@ condition:
 action:
   - service: light.turn_on
     data_template:
-      entity_id: !input 'light_group'
+      target: !input 'light_group'
       brightness: >
         {% set step = (step / 255 * 100) %}
         {% if trigger.to_state.attributes.direction == "backward" %}
