@@ -13,7 +13,7 @@ blueprint:
       name: IKEA Symfonisk Sound Controller
       description: De entiteit-id van de IKEA Symfonisk Sound Controller
       selector:
-        entity:
+        device:
           integration: deconz
           manufacturer: IKEA of Sweden
     step:
