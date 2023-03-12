@@ -18,7 +18,6 @@ blueprint:
       description: IKEA SYMFONISK to use
       selector:
         device:
-          integration: deconz
           manufacturer: IKEA of Sweden
           model: SYMFONISK Sound Controller
     light:
