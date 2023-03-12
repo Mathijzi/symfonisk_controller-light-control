@@ -14,7 +14,6 @@ blueprint:
       description: De entiteit-id van de IKEA Symfonisk Sound Controller
       selector:
         device:
-          integration: deconz
           manufacturer: IKEA of Sweden
     step:
       name: Helderheidsstap
