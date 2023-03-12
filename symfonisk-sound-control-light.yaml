@@ -1,6 +1,6 @@
-blueprint: 
+blueprint:
   name: IKEA Symfonisk Sound Controller Light Group Dimmer
-  description: Pas de helderheid aan van een groep lichten met behulp van een IKEA Symfonisk Sound Controller
+  description: Pas de helderheid aan van een groep lichten met behulp van een IKEA Symfonisk Sound Controller zonder MQTT
   domain: automation
   input:
     light_group:
@@ -13,8 +13,9 @@ blueprint:
       name: IKEA Symfonisk Sound Controller
       description: De entiteit-id van de IKEA Symfonisk Sound Controller
       selector:
-        device:
-          manufacturer: IKEA of Sweden
+        entity:
+          domain: sensor
+          integration: zha
     step:
       name: Helderheidsstap
       description: Het aantal punten dat de helderheid per rotatie van de controller verhoogd of verlaagd moet worden
@@ -25,25 +26,27 @@ blueprint:
           max: 100
           mode: slider
           step: 1
+  source_url: https://www.example.com
 
 mode: restart
 alias: Pas de helderheid aan met de IKEA Symfonisk Sound Controller
 trigger:
-  platform: state
-  entity_id: !input 'controller'
-  attribute: state
+  platform: event
+  event_type: zha_event
+  event_data:
+    device_ieee: !input 'controller'
 condition:
   - condition: template
-    value_template: '{{ trigger.to_state.state in ["click", "hold"] }}'
+    value_template: '{{ trigger.event.data.cluster_id == 8 and trigger.event.data.command == "step" }}'
 action:
   - service: light.turn_on
     data_template:
-      target: !input 'light_group'
+      entity_id: !input 'light_group'
       brightness: >
         {% set step = (step / 255 * 100) %}
-        {% if trigger.to_state.attributes.direction == "backward" %}
+        {% if trigger.event.data.args[0] == "backward" %}
           {{ state_attr(entity_id, "brightness") | int - step }}
-        {% elif trigger.to_state.attributes.direction == "forward" %}
+        {% elif trigger.event.data.args[0] == "forward" %}
           {{ state_attr(entity_id, "brightness") | int + step }}
         {% else %}
           {{ state_attr(entity_id, "brightness") }}
